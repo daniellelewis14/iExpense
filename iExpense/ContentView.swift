@@ -9,39 +9,38 @@ import SwiftUI
 
 
 struct ContentView: View {
-   @StateObject var expenses = Expenses()
+    @StateObject var expenses = Expenses()
     @State private var showingAddExpense = false
+    
+    func removeItems(at offsets: IndexSet, in inputArray: [ExpenseItem]) {
+        var objectsToDelete = IndexSet()
+        
+        for offset in offsets {
+            let item = inputArray[offset]
+            
+            if let index = expenses.items.firstIndex(of: item) {
+                objectsToDelete.insert(index)
+            }
+        }
+        
+        expenses.items.remove(atOffsets: offsets)
+    }
+    
+    func removePersonalItems(at offsets: IndexSet) {
+        removeItems(at: offsets, in: expenses.personalItems)
+    }
+    
+    func removeBusinessItems(at offsets: IndexSet) {
+        removeItems(at: offsets, in: expenses.businessItems)
+    }
     
     
     var body: some View {
         NavigationView {
             VStack {
                 List {
-                    ForEach(expenses.items) { item in
-                        //did not have to add id: in ForEach due to Identifiable protocol in ExpenseItems
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(item.name)
-                                    .font(.headline)
-                                Text(item.type)
-                            }
-                            Spacer()
-                            
-                            if item.amount >= 100 {
-                                Text(item.amount, format: .currency(code: "USD"))
-                                    .foregroundColor(.red)
-                            } else if item.amount < 100 && item.amount > 10 {
-                                Text(item.amount, format: .currency(code: "USD"))
-                                    .foregroundColor(.blue)
-                            } else if  item.amount <= 10 {
-                                Text(item.amount, format: .currency(code: "USD"))
-                                    .foregroundColor(.green)
-                            }
-                            
-                        }
-                        
-                    }
-                    .onDelete(perform: removeItems)
+                    ExpenseSection(title: "Business", expenses: expenses.businessItems, deleteItems: removeBusinessItems)
+                    ExpenseSection(title: "Personal", expenses: expenses.personalItems, deleteItems: removePersonalItems)
                 }
             }
             .navigationTitle("iExpense")
@@ -56,14 +55,22 @@ struct ContentView: View {
                 AddView(expenses: expenses)
             }
         }
-    }
-    func removeItems(at offsets: IndexSet) {
-        expenses.items.remove(atOffsets: offsets)
+       
+        
     }
 }
+
+
+
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
+    }
+}
+
+extension FormatStyle where Self == FloatingPointFormatStyle<Double>.Currency {
+    static var localCurrency: Self {
+        .currency(code: Locale.current.currency?.identifier ?? "USD")
     }
 }
